@@ -1,0 +1,34 @@
+[Unit]
+Description=Otocafe Prod
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=ghcr.io/syntaxbender/otocafe:latest
+AutoUpdate=registry
+ContainerName=otocafe
+
+# sadece localhost
+PublishPort=127.0.0.1:3000:3000
+
+# === SECURITY HARDENING ===
+ReadOnly=true
+NoNewPrivileges=true
+DropCapability=all
+UserNS=keep-id
+
+# tmpfs
+Tmpfs=/tmp:rw,nosuid,nodev,noexec,size=64m
+
+# === RESOURCE LIMITS ===
+PidsLimit=200
+
+[Service]
+Restart=always
+RestartSec=5
+MemoryMax=256M
+CPUWeight=1024
+
+[Install]
+WantedBy=default.target
+

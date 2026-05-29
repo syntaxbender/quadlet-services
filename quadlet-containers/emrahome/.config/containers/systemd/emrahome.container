@@ -1,0 +1,37 @@
+[Unit]
+Description=Emrahome Prod
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=ghcr.io/syntaxbender/emrahome:latest
+AutoUpdate=registry
+ContainerName=emrahome
+
+# sadece localhost
+PublishPort=127.0.0.1:3005:3005
+
+Environment=NODE_ENV=production
+Environment=PORT=3005
+
+# === SECURITY HARDENING ===
+ReadOnly=true
+NoNewPrivileges=true
+DropCapability=all
+UserNS=keep-id
+
+# volumes
+Tmpfs=/tmp:rw,nosuid,nodev,noexec,size=64m
+Volume=emra_next_images_cache:/app/.next/cache/images
+# === RESOURCE LIMITS ===
+PidsLimit=200
+
+[Service]
+Restart=always
+RestartSec=5
+MemoryMax=256M
+CPUWeight=1024
+
+[Install]
+WantedBy=default.target
+
