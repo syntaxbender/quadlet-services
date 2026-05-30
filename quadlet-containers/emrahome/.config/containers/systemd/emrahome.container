@@ -24,7 +24,7 @@ UserNS=keep-id
 Tmpfs=/tmp:rw,nosuid,nodev,noexec,size=64m
 Volume=emra_next_images_cache:/app/.next/cache/images
 # === RESOURCE LIMITS ===
-PidsLimit=200
+#PidsLimit=200
 
 [Service]
 Restart=always
