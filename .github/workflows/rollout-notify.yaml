@@ -1,0 +1,71 @@
+# .github/workflows/rollout-notify.yml
+name: rollout-notify
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "quadlet-containers/**"
+      - "nginx/**"
+      - ".github/workflows/rollout-notify.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rollout-notify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      TZ: UTC
+    steps:
+      - name: Derive deploy token
+        shell: bash
+        env:
+          SALT_SECRET: ${{ secrets.DEPLOY_SALT_SECRET }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${SALT_SECRET:-}" ]]; then
+            echo "DEPLOY_SALT_SECRET is empty" >&2
+            exit 1
+          fi
+
+          TIME_UTC="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          SHA_LOWER="${GITHUB_SHA,,}"
+          PAYLOAD="${TIME_UTC}"$'\n'"${SHA_LOWER}"
+          TOKEN="$(printf "%s" "$PAYLOAD" | openssl dgst -sha256 -hmac "$SALT_SECRET" -binary | xxd -p -c 256)"
+
+          echo "DEPLOY_TIME_UTC=$TIME_UTC" >> "$GITHUB_ENV"
+          echo "DEPLOY_SHA=$SHA_LOWER" >> "$GITHUB_ENV"
+          echo "DEPLOY_TOKEN=$TOKEN" >> "$GITHUB_ENV"
+
+      - name: Notify webhook
+        shell: bash
+        env:
+          DEPLOY_URL: ${{ secrets.DEPLOY_URL }} # örn: https://webhook.example.com
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${DEPLOY_URL:-}" ]]; then
+            echo "DEPLOY_URL is empty" >&2
+            exit 1
+          fi
+
+          BASE_URL="${DEPLOY_URL%/}"
+
+          curl --fail-with-body -sS \
+            --retry 3 \
+            --retry-delay 2 \
+            --retry-all-errors \
+            -X POST "${BASE_URL}/deploy" \
+            -H "X-Deploy-Token: ${DEPLOY_TOKEN}" \
+            -H "X-Deploy-Time-UTC: ${DEPLOY_TIME_UTC}" \
+            -H "X-Deploy-Sha: ${DEPLOY_SHA}"
+
+          echo "Webhook notified: ${BASE_URL}/deploy sha=${DEPLOY_SHA}"
