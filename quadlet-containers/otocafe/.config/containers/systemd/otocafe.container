@@ -7,6 +7,7 @@ Wants=network-online.target
 Image=ghcr.io/syntaxbender/otocafe:latest
 AutoUpdate=registry
 ContainerName=otocafe
+EnvironmentFile=%h/.config/containers/systemd/otocafe.env
 
 # sadece localhost
 PublishPort=127.0.0.1:3000:3000
