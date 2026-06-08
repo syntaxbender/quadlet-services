@@ -29,7 +29,7 @@ Volume=emra_next_images_cache:/app/.next/cache/images
 [Service]
 Restart=always
 RestartSec=5
-MemoryMax=256M
+MemoryMax=257M
 CPUWeight=1024
 
 [Install]
